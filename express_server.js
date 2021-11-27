@@ -30,11 +30,18 @@ app.post("/urls", (req, res) => {
   console.log(urlDatabase); 
 });
 
-app.post("/urls/:id/delete", (req, res) => {
-  const urlID = req.params.id;
-  delete urlDatabase[urlID];
+app.post("/urls/:id/edit", (req, res) => {
+  const urlID = req.params.id; 
+  urlDatabase[urlID] = req.body.editURL; 
   
-  res.redirect('/urls')
+  res.redirect('/urls') //redirect back to urls page
+})
+
+app.post("/urls/:id/delete", (req, res) => {
+  const urlID = req.params.id; //urlID is the id shown in the url 
+  delete urlDatabase[urlID]; //delete this url from database
+  
+  res.redirect('/urls') //redirect back to urls page
 })
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -49,8 +56,8 @@ app.get("/u/urls_404", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  if (!urlDatabase[req.params.shortURL]){
-    res.status(404).redirect('/u/urls_404')
+  if (!urlDatabase[req.params.shortURL]){ //if the short URL is not in the database
+    res.status(404).redirect('/u/urls_404') //return 404 status and redirect to 404 error page
   }
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
