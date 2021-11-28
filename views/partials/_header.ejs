@@ -11,10 +11,17 @@
       </div>
     </div>
     <div>
-      <form class = "form-inline" action="/login" method="POST" style="display:flex;justify-content:center;align-items:center">
-        <input class="form-control" type="text" name="username" placeholder="username" style="width: 150px; margin: 1em">
-        <button type="submit" class="btn btn-primary">GO</button>
+      <% if (username){ %>
+        <form name = logout class = "form-inline" action="/logout" method="POST" style="display:flex;justify-content:center;align-items:center">
+          <div class="navbar-brand">You are logged in as: <%= username %> &nbsp;</div>
+          <button type="submit" class="btn btn-outline-danger">Logout</button>
+        </form>
+      <% } else { %>
+      <form name = loginOut class = "form-inline" action="/login" method="POST" style="display:flex;justify-content:center;align-items:center">
+        <input class="form-control" type="text" name="username" placeholder="username" style="width: 150px; margin-right: 30px;">
+        <button type="submit" class="btn btn-primary">Login</button>
       </form>
+      <% } %>
     </div>
   </nav>
 </div>
