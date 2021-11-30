@@ -30,25 +30,31 @@ const generateRandomString = () => {
   return Math.random().toString(36).substring(6) //creates a random 6 letters/numbers
 };
 
+const fetchEmailById = (id) =>{
+  const user = users[id];
+  const userEmail = user && user.email;
+  return userEmail;
+};
+
 app.get("/urls", (req, res) => {
+  const userEmail = fetchEmailById(req.cookies["user_id"])
   const templateVars = {
-    username: req.cookies["username"],
-    id: req.cookies["user_id"],
-    urlDatabase
+    urlDatabase,
+    userEmail
   };
   res.render('urls_index.ejs', templateVars);
 });
 
-app.get("/urls/new", (req, res) => {[]
-  const cookie = {username: req.cookies["username"]};
-  res.render("urls_new", cookie);
+app.get("/urls/new", (req, res) => {
+  const userEmail = fetchEmailById(req.cookies["user_id"])
+  const templateVars = {userEmail};
+  res.render("urls_new", templateVars);
 });
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString(); 
   urlDatabase[shortURL] = req.body.longURL; //create new database key Value randomString : longUrl
   res.redirect(`/urls/${shortURL}`); //redirects to /urls/shortURL
-  console.log(urlDatabase); 
 });
 
 app.post("/urls/:id/edit", (req, res) => {
@@ -67,13 +73,15 @@ app.post("/urls/:id/delete", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL; 
   const longURL = urlDatabase[shortURL];
-  const templateVars = {shortURL, longURL, username: req.cookies["username"]}
+  const userEmail = fetchEmailById(req.cookies["user_id"])
+  const templateVars = {shortURL, longURL, userEmail}
   res.render("urls_show.ejs", templateVars);
 });
 
 app.get("/u/urls_404", (req, res) => {
-  const cookie = {username: req.cookies["username"]};
-  res.render("urls_404.ejs", cookie);
+  const userEmail = fetchEmailById(req.cookies["user_id"])
+  const templateVars = {userEmail};;
+  res.render("urls_404.ejs", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -96,13 +104,14 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect('/urls') //redirect back to urls page
 });
 
 app.get("/register", (req, res) => {
-  const cookie = {username: req.cookies["username"]};
-  res.render("register.ejs", cookie)
+  const userEmail = fetchEmailById(req.cookies["user_id"])
+  const templateVars = {userEmail};;
+  res.render("register.ejs", templateVars)
 });
 
 app.post("/register", (req, res) => {
