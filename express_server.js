@@ -118,6 +118,14 @@ app.post("/register", (req, res) => {
   const ID = generateRandomString(); 
   const email = req.body.email;
   const password = req.body.password;
+  if (!email || !password){
+    res.status(404).redirect('/u/urls_404')
+  }
+  for (let key in users){
+    if (users[key].email === email){
+      res.status(404).redirect('/u/urls_404')
+    }
+  }
   res.cookie('user_id', ID);
   users[ID] = {
     "id": ID,
