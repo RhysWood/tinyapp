@@ -25,7 +25,7 @@ app.get("/urls", (req, res) => {
   res.render('urls_index.ejs', templateVars);
 });
 
-app.get("/urls/new", (req, res) => {
+app.get("/urls/new", (req, res) => {[]
   const cookie = {username: req.cookies["username"]};
   res.render("urls_new", cookie);
 });
@@ -84,6 +84,11 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect('/urls') //redirect back to urls page
+});
+
+app.get("/register", (req, res) => {
+  const cookie = {username: req.cookies["username"]};
+  res.render("register.ejs", cookie)
 });
 
 app.get("/", (req, res) => {
