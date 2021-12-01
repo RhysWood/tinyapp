@@ -114,7 +114,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect('/urls') //redirect back to urls page
+  res.redirect('/login') //redirect back to urls page
 });
 
 app.get("/register", (req, res) => {
