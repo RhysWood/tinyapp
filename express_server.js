@@ -36,6 +36,16 @@ const fetchEmailById = (id) =>{
   return userEmail;
 };
 
+const findUserByEmail = (email, users) => {
+  for (const userId in users) {
+    const user = users[userId]; // users['abc']
+    if (user.email === email) {
+      return user
+    }
+  }
+  return null;
+}
+
 app.get("/urls", (req, res) => {
   const userEmail = fetchEmailById(req.cookies["user_id"])
   const templateVars = {
@@ -102,7 +112,6 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect('/urls') //redirect back to urls page
 })
 
-
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect('/urls') //redirect back to urls page
@@ -115,7 +124,21 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  //do something
+  const email = req.body.email;
+  const password = req.body.password;
+  const user = findUserByEmail(email, users);
+  // validate input
+  if (!email || !password) {
+    return res.status(403).send('email and password cannot be blank.');
+  }
+  if (!user) {
+    return res.status(403).send('no user with that email found.');
+  }
+  if (user.password !== password) {
+    return res.status(403).send('password does not match.');
+  }
+  //happy path
+  res.cookie('user_id', user.id)
   res.redirect('/urls') //redirect back to urls page
 });
 
@@ -124,11 +147,11 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   if (!email || !password){
-    res.status(404).redirect('/u/urls_404')
+    return res.status(404).send('incorrect password!')
   }
   for (let key in users){
     if (users[key].email === email){
-      res.status(404).redirect('/u/urls_404')
+      return res.status(404).send('This user already exists!')
     }
   }
   res.cookie('user_id', ID);
