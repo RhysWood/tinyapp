@@ -38,7 +38,7 @@ const fetchEmailById = (id) =>{
 
 const findUserByEmail = (email, users) => {
   for (const userId in users) {
-    const user = users[userId]; // users['abc']
+    const user = users[userId]; 
     if (user.email === email) {
       return user
     }
@@ -46,10 +46,21 @@ const findUserByEmail = (email, users) => {
   return null;
 }
 
+const urlsForUser = (id) => {
+  let output = [];
+  for (const keys in urlDatabase){
+    if (urlDatabase[keys].userID === id){
+      output.push({...urlDatabase[keys], shortURL: keys})
+    }
+  }
+  return output;
+};
+
 app.get("/urls", (req, res) => {
   const userEmail = fetchEmailById(req.cookies["user_id"])
+  const userURLS = urlsForUser(req.cookies["user_id"])
   const templateVars = {
-    urlDatabase,
+    userURLS,
     userEmail
   };
   if (!req.cookies["user_id"]){
