@@ -3,6 +3,8 @@ const app = express();
 const PORT = 8080; 
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require('bcrypt');
+
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
@@ -13,18 +15,7 @@ const urlDatabase = {
   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
-const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
-  },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
-  }
-}
+const users = {};
 
 const generateRandomString = () => {
   return Math.random().toString(36).substring(6) //creates a random 6 letters/numbers
@@ -157,6 +148,8 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = findUserByEmail(email, users);
+  const hashedPassword = user.password
+  const access = bcrypt.compareSync(password, hashedPassword);
   // validate input
   if (!email || !password) {
     return res.status(403).send('email and password cannot be blank.');
@@ -164,7 +157,7 @@ app.post("/login", (req, res) => {
   if (!user) {
     return res.status(403).send('no user with that email found.');
   }
-  if (user.password !== password) {
+  if (!access) {
     return res.status(403).send('password does not match.');
   }
   //happy path
@@ -176,6 +169,7 @@ app.post("/register", (req, res) => {
   const ID = generateRandomString(); 
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   if (!email || !password){
     return res.status(404).send('incorrect password!')
   }
@@ -188,8 +182,9 @@ app.post("/register", (req, res) => {
   users[ID] = {
     "id": ID,
     "email": email,
-    "password": password
+    "password": hashedPassword
   }
+  console.log(users[ID]);
   res.redirect("/urls");
 });
 
