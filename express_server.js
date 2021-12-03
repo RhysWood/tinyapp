@@ -47,10 +47,10 @@ const findUserByEmail = (email, users) => {
 }
 
 const urlsForUser = (id) => {
-  let output = [];
+  let output = {};
   for (const keys in urlDatabase){
     if (urlDatabase[keys].userID === id){
-      output.push({...urlDatabase[keys], shortURL: keys})
+      output[keys]={...urlDatabase[keys]};
     }
   }
   return output;
@@ -81,17 +81,14 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL; 
+  const userURLS = urlsForUser(req.cookies["user_id"])
+  if (!userURLS[shortURL]){ //if the short URL is not in the database
+    return res.status(404).send('URL not Found! You may need to log in to view this') //return 404 status and redirect to 404 error page
+  }
   const longURL = urlDatabase[shortURL].longURL;
-  console.log(longURL)
   const userEmail = fetchEmailById(req.cookies["user_id"])
   const templateVars = {shortURL, longURL, userEmail}
   res.render("urls_show.ejs", templateVars);
-});
-
-app.get("/u/urls_404", (req, res) => {
-  const userEmail = fetchEmailById(req.cookies["user_id"])
-  const templateVars = {userEmail};;
-  res.render("urls_404.ejs", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -101,6 +98,12 @@ app.get("/u/:shortURL", (req, res) => {
   }
   const longURL = urlDatabase[shortURL].longURL;
   res.redirect(longURL);
+});
+
+app.get("/u/urls_404", (req, res) => {
+  const userEmail = fetchEmailById(req.cookies["user_id"])
+  const templateVars = {userEmail};;
+  res.render("urls_404.ejs", templateVars);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -126,13 +129,21 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:id/edit", (req, res) => {
+  const userURLS = urlsForUser(req.cookies["user_id"])
   const urlID = req.params.id; 
+  if (!userURLS[urlID]){ //if the short URL is not in the database
+    return res.status(404).send('URL not Found! You may need to log in to view this') //return 404 status and redirect to 404 error page
+  }
   urlDatabase[urlID].longURL = req.body.editURL; 
   res.redirect('/urls') //redirect back to urls page
 })
 
 app.post("/urls/:id/delete", (req, res) => {
+  const userURLS = urlsForUser(req.cookies["user_id"])
   const urlID = req.params.id; //urlID is the id shown in the url 
+  if (!userURLS[urlID]){ //if the short URL is not in the database
+    return res.status(404).send('URL not Found! You may need to log in to view this') //return 404 status and redirect to 404 error page
+  }
   delete urlDatabase[urlID]; //delete this url from database
   res.redirect('/urls') //redirect back to urls page
 })
@@ -179,7 +190,6 @@ app.post("/register", (req, res) => {
     "email": email,
     "password": password
   }
-  console.log('ID :', req.signedCookies)
   res.redirect("/urls");
 });
 
