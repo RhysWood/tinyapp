@@ -2,12 +2,15 @@ const express = require("express");
 const app = express();
 const PORT = 8080; 
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require('bcrypt');
 
 
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2']
+}))
 app.set("view engine", "ejs");
 
 const urlDatabase = {
@@ -48,22 +51,22 @@ const urlsForUser = (id) => {
 };
 
 app.get("/urls", (req, res) => {
-  const userEmail = fetchEmailById(req.cookies["user_id"])
-  const userURLS = urlsForUser(req.cookies["user_id"])
+  const userEmail = fetchEmailById(req.session.user_id);
+  const userURLS = urlsForUser(req.session.user_id);
   const templateVars = {
     userURLS,
     userEmail
   };
-  if (!req.cookies["user_id"]){
+  if (!req.session.user_id){
     return res.redirect('/login');
   }
   res.render('urls_index.ejs', templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const userEmail = fetchEmailById(req.cookies["user_id"])
+  const userEmail = fetchEmailById(req.session.user_id)
   const templateVars = {userEmail};
-  if (!req.cookies["user_id"]){
+  if (!req.session.user_id){
     return res.redirect('/login');
   }
   res.render("urls_new", templateVars);
@@ -72,12 +75,12 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL; 
-  const userURLS = urlsForUser(req.cookies["user_id"])
+  const userURLS = urlsForUser(req.session.user_id)
   if (!userURLS[shortURL]){ //if the short URL is not in the database
     return res.status(404).send('URL not Found! You may need to log in to view this') //return 404 status and redirect to 404 error page
   }
   const longURL = urlDatabase[shortURL].longURL;
-  const userEmail = fetchEmailById(req.cookies["user_id"])
+  const userEmail = fetchEmailById(req.session.user_id)
   const templateVars = {shortURL, longURL, userEmail}
   res.render("urls_show.ejs", templateVars);
 });
@@ -92,7 +95,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/u/urls_404", (req, res) => {
-  const userEmail = fetchEmailById(req.cookies["user_id"])
+  const userEmail = fetchEmailById(req.session.user_id)
   const templateVars = {userEmail};;
   res.render("urls_404.ejs", templateVars);
 });
@@ -102,25 +105,25 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const userEmail = fetchEmailById(req.cookies["user_id"])
+  const userEmail = fetchEmailById(req.session.user_id);
   const templateVars = {userEmail};
   res.render("login", templateVars)
 });
 
 app.get("/register", (req, res) => {
-  const userEmail = fetchEmailById(req.cookies["user_id"])
+  const userEmail = fetchEmailById(req.session.user_id)
   const templateVars = {userEmail};;
   res.render("register.ejs", templateVars)
 });
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString(); 
-  urlDatabase[shortURL] = {"longURL": req.body.longURL, "userID": req.cookies["user_id"] }; //create new database key Value randomString : longUrl
+  urlDatabase[shortURL] = {"longURL": req.body.longURL, "userID": req.session.user_id }; //create new database key Value randomString : longUrl
   res.redirect(`/urls/${shortURL}`); //redirects to /urls/shortURL
 });
 
 app.post("/urls/:id/edit", (req, res) => {
-  const userURLS = urlsForUser(req.cookies["user_id"])
+  const userURLS = urlsForUser(req.session.user_id)
   const urlID = req.params.id; 
   if (!userURLS[urlID]){ //if the short URL is not in the database
     return res.status(404).send('URL not Found! You may need to log in to view this') //return 404 status and redirect to 404 error page
@@ -130,7 +133,7 @@ app.post("/urls/:id/edit", (req, res) => {
 })
 
 app.post("/urls/:id/delete", (req, res) => {
-  const userURLS = urlsForUser(req.cookies["user_id"])
+  const userURLS = urlsForUser(req.session.user_id)
   const urlID = req.params.id; //urlID is the id shown in the url 
   if (!userURLS[urlID]){ //if the short URL is not in the database
     return res.status(404).send('URL not Found! You may need to log in to view this') //return 404 status and redirect to 404 error page
@@ -140,7 +143,7 @@ app.post("/urls/:id/delete", (req, res) => {
 })
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  res.clearCookie('session');
   res.redirect('/login') //redirect back to urls page
 });
 
@@ -148,20 +151,20 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = findUserByEmail(email, users);
-  const hashedPassword = user.password
-  const access = bcrypt.compareSync(password, hashedPassword);
-  // validate input
   if (!email || !password) {
     return res.status(403).send('email and password cannot be blank.');
   }
-  if (!user) {
-    return res.status(403).send('no user with that email found.');
+  if (user === null || !user) {
+    return res.status(403).send('no user with that email found. Remember to register first!');
   }
+  const hashedPassword = user.password
+  const access = bcrypt.compareSync(password, hashedPassword);
+  // validate input
   if (!access) {
     return res.status(403).send('password does not match.');
   }
   //happy path
-  res.cookie('user_id', user.id)
+  req.session.user_id = user.id;
   res.redirect('/urls') //redirect back to urls page
 });
 
@@ -178,13 +181,12 @@ app.post("/register", (req, res) => {
       return res.status(404).send('This user already exists!')
     }
   }
-  res.cookie('user_id', ID);
+  req.session.user_id = ID;
   users[ID] = {
     "id": ID,
     "email": email,
     "password": hashedPassword
   }
-  console.log(users[ID]);
   res.redirect("/urls");
 });
 
