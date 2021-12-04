@@ -4,7 +4,7 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require('bcrypt');
-
+const { generateRandomString, fetchEmailById, findUserByEmail, urlsForUser } = require('./helpers');
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
@@ -20,39 +20,9 @@ const urlDatabase = {
 
 const users = {};
 
-const generateRandomString = () => {
-  return Math.random().toString(36).substring(6) //creates a random 6 letters/numbers
-};
-
-const fetchEmailById = (id) =>{
-  const user = users[id];
-  const userEmail = user && user.email;
-  return userEmail;
-};
-
-const findUserByEmail = (email, users) => {
-  for (const userId in users) {
-    const user = users[userId]; 
-    if (user.email === email) {
-      return user
-    }
-  }
-  return null;
-}
-
-const urlsForUser = (id) => {
-  let output = {};
-  for (const keys in urlDatabase){
-    if (urlDatabase[keys].userID === id){
-      output[keys]={...urlDatabase[keys]};
-    }
-  }
-  return output;
-};
-
 app.get("/urls", (req, res) => {
-  const userEmail = fetchEmailById(req.session.user_id);
-  const userURLS = urlsForUser(req.session.user_id);
+  const userEmail = fetchEmailById(req.session.user_id, users);
+  const userURLS = urlsForUser(req.session.user_id, urlDatabase);
   const templateVars = {
     userURLS,
     userEmail
@@ -64,7 +34,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const userEmail = fetchEmailById(req.session.user_id)
+  const userEmail = fetchEmailById(req.session.user_id, users)
   const templateVars = {userEmail};
   if (!req.session.user_id){
     return res.redirect('/login');
@@ -75,12 +45,12 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL; 
-  const userURLS = urlsForUser(req.session.user_id)
+  const userURLS = urlsForUser(req.session.user_id, urlDatabase)
   if (!userURLS[shortURL]){ //if the short URL is not in the database
     return res.status(404).send('URL not Found! You may need to log in to view this') //return 404 status and redirect to 404 error page
   }
   const longURL = urlDatabase[shortURL].longURL;
-  const userEmail = fetchEmailById(req.session.user_id)
+  const userEmail = fetchEmailById(req.session.user_id, users)
   const templateVars = {shortURL, longURL, userEmail}
   res.render("urls_show.ejs", templateVars);
 });
@@ -95,7 +65,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/u/urls_404", (req, res) => {
-  const userEmail = fetchEmailById(req.session.user_id)
+  const userEmail = fetchEmailById(req.session.user_id, users)
   const templateVars = {userEmail};;
   res.render("urls_404.ejs", templateVars);
 });
@@ -105,13 +75,13 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const userEmail = fetchEmailById(req.session.user_id);
+  const userEmail = fetchEmailById(req.session.user_id, users);
   const templateVars = {userEmail};
   res.render("login", templateVars)
 });
 
 app.get("/register", (req, res) => {
-  const userEmail = fetchEmailById(req.session.user_id)
+  const userEmail = fetchEmailById(req.session.user_id, users)
   const templateVars = {userEmail};;
   res.render("register.ejs", templateVars)
 });
@@ -123,7 +93,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:id/edit", (req, res) => {
-  const userURLS = urlsForUser(req.session.user_id)
+  const userURLS = urlsForUser(req.session.user_id, urlDatabase)
   const urlID = req.params.id; 
   if (!userURLS[urlID]){ //if the short URL is not in the database
     return res.status(404).send('URL not Found! You may need to log in to view this') //return 404 status and redirect to 404 error page
@@ -133,7 +103,7 @@ app.post("/urls/:id/edit", (req, res) => {
 })
 
 app.post("/urls/:id/delete", (req, res) => {
-  const userURLS = urlsForUser(req.session.user_id)
+  const userURLS = urlsForUser(req.session.user_id, urlDatabase)
   const urlID = req.params.id; //urlID is the id shown in the url 
   if (!userURLS[urlID]){ //if the short URL is not in the database
     return res.status(404).send('URL not Found! You may need to log in to view this') //return 404 status and redirect to 404 error page
