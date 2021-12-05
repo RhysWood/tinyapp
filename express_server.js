@@ -14,8 +14,9 @@ app.use(cookieSession({
 app.set("view engine", "ejs");
 
 const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+  //SYNTAX EXAMPLES:
+  // b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  // i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
 const users = {};
@@ -27,16 +28,16 @@ app.get("/urls", (req, res) => {
     userURLS,
     userEmail
   };
-  if (!req.session.user_id){
-    return res.redirect('/login');
+  if (!req.session.user_id){ //if there id no user session cookie
+    return res.redirect('/login'); //redirect to login
   }
-  res.render('urls_index.ejs', templateVars);
+  res.render('urls_index.ejs', templateVars); //else render the urls
 });
 
 app.get("/urls/new", (req, res) => {
   const userEmail = fetchEmailById(req.session.user_id, users)
   const templateVars = {userEmail};
-  if (!req.session.user_id){
+  if (!req.session.user_id){ // check user logged in
     return res.redirect('/login');
   }
   res.render("urls_new", templateVars);
@@ -62,12 +63,6 @@ app.get("/u/:shortURL", (req, res) => {
   }
   const longURL = urlDatabase[shortURL].longURL;
   res.redirect(longURL);
-});
-
-app.get("/u/urls_404", (req, res) => {
-  const userEmail = fetchEmailById(req.session.user_id, users)
-  const templateVars = {userEmail};;
-  res.render("urls_404.ejs", templateVars);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -121,7 +116,7 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = findUserByEmail(email, users);
-  if (!email || !password) {
+  if (!email || !password) { //should not get this far due to html requirement on login box, however this is a catch all.
     return res.status(403).send('email and password cannot be blank.');
   }
   if (user === null || !user) {
@@ -161,7 +156,7 @@ app.post("/register", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.redirect("/urls");
+  res.redirect("/register");
 });
 
 app.listen(PORT, () => {
