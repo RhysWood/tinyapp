@@ -4,13 +4,13 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Final Product
 
-!["create account"](/docs/create_account.png)
+!["create account"](https://github.com/RhysWood/tinyapp/blob/master/docs/create_account.png)
 >Create an Account with email and password.
 
-!["New URL"](/docs/newURl.png)
+!["New URL"](https://github.com/RhysWood/tinyapp/blob/master/docs/newUrl.png)
 >Create new short URL
 
-!["User URLs"](/docs/userURLs.png)
+!["User URLs"](https://github.com/RhysWood/tinyapp/blob/master/docs/userURLs.png)
 >List of created short URLs
 
 ## Dependencies
